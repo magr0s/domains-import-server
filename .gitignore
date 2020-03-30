@@ -67,3 +67,6 @@ node_modules/
 # lock files
 *.lock
 *lock.json
+
+# exclude service account config
+*.service-key.json
