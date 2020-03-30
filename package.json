@@ -1,0 +1,9 @@
+{
+  "name": "domains-import-server",
+  "version": "1.0.0",
+  "description": "Server API for Domains Import Service",
+  "main": "functions/index.js",
+  "author": "Oleksandr Krokhmalnyi <magr0s.ak@gmail.com>",
+  "license": "MIT",
+  "private": true
+}
