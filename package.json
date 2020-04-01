@@ -5,5 +5,8 @@
   "main": "functions/index.js",
   "author": "Oleksandr Krokhmalnyi <magr0s.ak@gmail.com>",
   "license": "MIT",
-  "private": true
+  "private": true,
+  "engines": {
+    "node": "10"
+  }
 }
