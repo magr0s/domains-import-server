@@ -10,7 +10,7 @@ class SettingsController {
       begetLogin,
       begetPassword,
       serverIP,
-      stackpathLogin,
+      stackpathId,
       stackpathSecret,
       ispManagerURL,
       ispManagerLogin,
@@ -21,7 +21,7 @@ class SettingsController {
       !begetLogin ||
       !begetPassword ||
       !serverIP ||
-      !stackpathLogin ||
+      !stackpathId ||
       !stackpathSecret ||
       !ispManagerURL ||
       !ispManagerLogin ||
@@ -42,7 +42,6 @@ class SettingsController {
   static async update (req, res) {
     const {
       params: { id },
-
       body
     } = req
 
@@ -50,7 +49,7 @@ class SettingsController {
       begetLogin,
       begetPassword,
       serverIP,
-      stackpathLogin,
+      stackpathId,
       stackpathSecret,
       ispManagerURL,
       ispManagerLogin,
@@ -63,7 +62,7 @@ class SettingsController {
       !begetLogin ||
       !begetPassword ||
       !serverIP ||
-      !stackpathLogin ||
+      !stackpathId ||
       !stackpathSecret ||
       !ispManagerURL ||
       !ispManagerLogin ||
@@ -73,7 +72,7 @@ class SettingsController {
     }
 
     try {
-      await SettingsRepository.set(id, body)
+      await SettingsRepository.update(id, body)
 
       return res.status(200).send({ success: true })
     } catch ({ message }) {
