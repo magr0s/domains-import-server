@@ -5,7 +5,7 @@ const firestore = new Firestore()
 class SettingsRepository {
   static get (id) {
     return firestore.get(`settings/${id}`)
-      .then(({ doc }) => {
+      .then((doc) => {
         const { id } = doc
 
         return Object.assign({}, doc.data(), { id })
