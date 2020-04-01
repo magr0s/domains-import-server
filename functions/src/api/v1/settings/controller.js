@@ -10,6 +10,7 @@ class SettingsController {
       begetLogin,
       begetPassword,
       serverIP,
+      stackpathLogin,
       stackpathSecret,
       ispManagerURL,
       ispManagerLogin,
@@ -20,6 +21,7 @@ class SettingsController {
       !begetLogin ||
       !begetPassword ||
       !serverIP ||
+      !stackpathLogin ||
       !stackpathSecret ||
       !ispManagerURL ||
       !ispManagerLogin ||
@@ -47,7 +49,9 @@ class SettingsController {
     const {
       begetLogin,
       begetPassword,
-      stackpathToken,
+      serverIP,
+      stackpathLogin,
+      stackpathSecret,
       ispManagerURL,
       ispManagerLogin,
       ispManagerPassword
@@ -58,7 +62,9 @@ class SettingsController {
     if (
       !begetLogin ||
       !begetPassword ||
-      !stackpathToken ||
+      !serverIP ||
+      !stackpathLogin ||
+      !stackpathSecret ||
       !ispManagerURL ||
       !ispManagerLogin ||
       !ispManagerPassword
