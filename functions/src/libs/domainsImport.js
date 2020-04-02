@@ -66,6 +66,13 @@ class DomainsImport {
         records: {
           A: [
             { priority: 10, value: STATIC_SERVER_IP }
+          ],
+          MX: [
+            { priority: 10, value: "mx1.beget.ru" },
+            { priority: 20, value: "mx2.beget.ru" }
+          ],
+          "TXT": [
+            { priority: 10, value: "v=spf1 redirect=beget.com" }
           ]
         }
       })
