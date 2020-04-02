@@ -7,6 +7,8 @@ const {
 
 const { WebdomainMgr } = require('ispmanager-nodejs')
 
+const STATIC_SERVER_IP = '151.139.128.10'
+
 class DomainsImport {
   constructor (params) {
     const {
@@ -59,6 +61,14 @@ class DomainsImport {
       const { id: zoneId } = await this.checkZone(zone)
 
       await this.beget.domain.addVirtual({ hostname, zone_id: zoneId })
+      await this.beget.dns.changeRecords({
+        fqdn: `${name}`,
+        records: {
+          A: [
+            { priority: 10, value: STATIC_SERVER_IP }
+          ]
+        }
+      })
 
       const [{ id: stackId }] = await this.sp.stacks.list()
 
