@@ -1,0 +1,150 @@
+{
+  "accessLogs": {
+    "enabled": false
+  },
+  "cacheControl": [
+    {
+      "maxAge": 3600,
+      "synchronizeMaxAge": true
+    }
+  ],
+  "cacheKeyModification": {
+    "normalizeKeyPathToLowerCase": true
+  },
+  "clientResponseModification": [
+    {
+      "addHeaders": "create:Access-Control-Allow-Origin: *",
+      "flowControl": "UNKNOWN",
+      "enabled": true,
+      "clientRequestFilter": [],
+      "clientResponseFilter": []
+    }
+  ],
+  "compression": {
+    "gzip": "txt,js,htm,html,css,json,svg",
+    "mime": "text/*"
+  },
+  "dynamicContent": [
+    {
+      "queryParams": "*",
+      "headerFields": "X-Forwarded-Host,X-Host,X-Forwarded-Scheme"
+    }
+  ],
+  "fileSegmentation": {
+    "enabled": true,
+    "initialOriginRequestBehavior": "UNKNOWN"
+  },
+  "varyHeaderField": {
+    "valuesFilter": "*",
+    "proxyBehavior": "UNKNOWN"
+  },
+  "gzipOriginPull": {
+    "enabled": true
+  },
+  "httpMethods": {
+    "passThru": "*"
+  },
+  "originPersistentConnections": {
+    "enabled": true
+  },
+  "originPull": {
+    "redirectAction": "proxy",
+    "defaultBehavior": "nocache"
+  },
+  "originPullCacheExtension": {
+    "expiredCacheExtension": 60
+  },
+  "originPullProtocol": {
+    "protocol": "http"
+  },
+  "originPullLogs": {
+    "enabled": false
+  },
+  "originPullPolicy": [
+    {
+      "expirePolicy": "DO_NOT_CACHE",
+      "expireSeconds": 0,
+      "honorNoStore": false,
+      "honorNoCache": false,
+      "honorMustRevalidate": false,
+      "noCacheBehavior": "spec",
+      "maxAgeZeroToNoCache": false,
+      "mustRevalidateToNoCache": false,
+      "forceBypassCache": false,
+      "httpHeaders": "*",
+      "honorPrivate": false,
+      "honorSMaxAge": false,
+      "updateHttpHeadersOn304Response": false,
+      "defaultCacheBehavior": "UNKNOWN",
+      "pathFilter": "wp-admin*"
+    },
+    {
+      "expirePolicy": "DO_NOT_CACHE",
+      "expireSeconds": 0,
+      "honorNoStore": false,
+      "honorNoCache": false,
+      "honorMustRevalidate": false,
+      "noCacheBehavior": "spec",
+      "maxAgeZeroToNoCache": false,
+      "mustRevalidateToNoCache": false,
+      "forceBypassCache": false,
+      "httpHeaders": "*",
+      "honorPrivate": false,
+      "honorSMaxAge": false,
+      "updateHttpHeadersOn304Response": false,
+      "defaultCacheBehavior": "UNKNOWN",
+      "pathFilter": "sbbi*"
+    },
+    {
+      "statusCodeMatch": "2*",
+      "expirePolicy": "CACHE_CONTROL",
+      "expireSeconds": 3600,
+      "honorNoStore": true,
+      "honorNoCache": true,
+      "honorMustRevalidate": true,
+      "noCacheBehavior": "spec",
+      "mustRevalidateToNoCache": true,
+      "httpHeaders": "*",
+      "honorPrivate": true,
+      "honorSMaxAge": true,
+      "updateHttpHeadersOn304Response": true,
+      "defaultCacheBehavior": "UNKNOWN",
+      "pathFilter": "*.*ls,*.*ls*,*.bmp,*.class,*.css,*.csv,*.doc,*.doc*,*.ejs,*.eot,*.eps,*.fav,*.gif,*.ico,*.jar,*.jpeg..."
+    },
+    {
+      "statusCodeMatch": "2*",
+      "expirePolicy": "CACHE_CONTROL",
+      "expireSeconds": 3600,
+      "honorNoStore": true,
+      "honorNoCache": true,
+      "honorMustRevalidate": true,
+      "noCacheBehavior": "spec",
+      "mustRevalidateToNoCache": true,
+      "httpHeaders": "*",
+      "honorPrivate": true,
+      "honorSMaxAge": true,
+      "updateHttpHeadersOn304Response": true,
+      "defaultCacheBehavior": "UNKNOWN"
+    },
+    {
+      "statusCodeMatch": "*",
+      "expirePolicy": "CACHE_CONTROL",
+      "expireSeconds": 5,
+      "honorNoStore": true,
+      "honorNoCache": true,
+      "honorMustRevalidate": true,
+      "noCacheBehavior": "spec",
+      "httpHeaders": "*",
+      "honorPrivate": true,
+      "honorSMaxAge": true,
+      "defaultCacheBehavior": "UNKNOWN"
+    }
+  ],
+  "http2Support": {
+    "enabled": true
+  },
+  "tls": {
+    "minVersion": "TLSv1_2",
+    "enabled": true
+  }
+}

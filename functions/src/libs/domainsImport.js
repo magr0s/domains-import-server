@@ -4,8 +4,9 @@ const {
   SitesStackpath,
   CDNStackpath
 } = require('stackpath-nodejs')
-
 const { WebdomainMgr } = require('ispmanager-nodejs')
+
+const SITE_CONFIG = require('../configs/site.json')
 
 const STATIC_SERVER_IP = '151.139.128.10'
 
@@ -87,38 +88,11 @@ class DomainsImport {
       const siteOpts = {
         domain: name,
 
-        origin: {
-          hostname: this.serverIP
-        },
+        origin: { hostname: this.serverIP },
 
-        configuration: {
-          originPullProtocol: {
-            protocol: 'http'
-          },
-
-          dynamicContent: [{
-            queryParams: '*',
-            headerFields: 'X-Forwarded-Host,X-Host,X-Forwarded-Scheme'
-          }],
-
-          compression: {
-            enabled: true
-          },
-
-          clientResponseModification: [{
-            addHeaders: 'create:Access-Control-Allow-Origin: *',
-            enabled: true,
-            flowControl: 'UNKNOWN'
-          }],
-
-          staticHeader: [{
-            originPull: `Host: ${name}`
-          }],
-
-          http2Support: {
-            enabled: true
-          }
-        }
+        configuration: Object.assign(SITE_CONFIG, {
+          staticHeader: [{ originPull: `Host: ${name}` }]
+        })
       }
 
       const {
@@ -186,7 +160,7 @@ class DomainsImport {
               expirePolicy: 'DO_NOT_CACHE',
               noCacheBehavior: 'spec',
               httpHeaders: '*',
-              pathFilter: `*://${name}/setting/`,
+              pathFilter: `*://${name}/seting/`,
               methodFilter: null,
               headerFilter: null,
               statusCodeMatch: null
