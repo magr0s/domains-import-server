@@ -61,39 +61,72 @@ class DomainsImport {
       const { id: zoneId } = await this.checkZone(zone)
 
       await this.beget.domain.addVirtual({ hostname, zone_id: zoneId })
+
       await this.beget.dns.changeRecords({
         fqdn: `${name}`,
         records: {
           A: [
             { priority: 10, value: STATIC_SERVER_IP }
           ],
+
           MX: [
-            { priority: 10, value: "mx1.beget.ru" },
-            { priority: 20, value: "mx2.beget.ru" }
+            { priority: 10, value: "mx1.beget.com." },
+            { priority: 20, value: "mx2.beget.com." }
           ],
+
           "TXT": [
             { priority: 10, value: "v=spf1 redirect=beget.com" }
           ]
         }
       })
 
-      const [{ id: stackId }] = await this.sp.stacks.list()
+      const {
+        results: [{ id: stackId }]
+      } = await this.sp.stacks.list()
 
       const siteOpts = {
         domain: name,
-        origin:  {
+
+        origin: {
           hostname: this.serverIP
         },
+
         configuration: {
           originPullProtocol: {
             protocol: 'http'
+          },
+
+          dynamicContent: [{
+            queryParams: '*',
+            headerFields: 'X-Forwarded-Host,X-Host,X-Forwarded-Scheme'
+          }],
+
+          compression: {
+            enabled: true
+          },
+
+          clientResponseModification: [{
+            addHeaders: 'create:Access-Control-Allow-Origin: *',
+            enabled: true,
+            flowControl: 'UNKNOWN'
+          }],
+
+          staticHeader: [{
+            originPull: `Host: ${name}`
+          }],
+
+          http2Support: {
+            enabled: true
           }
         }
       }
 
-      const { id: siteId } = await this.sp.sites.add(stackId, siteOpts)
+      const {
+        site: { id: siteId }
+      } = await this.sp.sites.add(stackId, siteOpts)
 
-      const [dns1] = await this.sp.cdn.dnsTargets(stackId, siteId)
+      const { addresses: [dns1]} = await this.sp.cdn.dnsTargets(stackId, siteId)
+
       await this.beget.dns.changeRecords({
         fqdn: `www.${name}`,
         records: {
@@ -103,20 +136,20 @@ class DomainsImport {
         }
       })
 
-      const scopes = await this.sp.cdn.getScopes(stackId, siteId)
+      const { results: scopes } = await this.sp.cdn.getScopes(stackId, siteId)
 
-      const { id: scopeId } = scopes.find(({ platform }) => (platform))
+      const { id: scopeId } = scopes.find(({ platform }) => (platform === 'CDS'))
 
-      const { verificationRequirements } = await this.sp.cdn.sslRequest(stackId, siteId)
-
-      const [{
-        dnsVerificationDetails: {
-          records: [{
-            name: dns2name,
-            data: dns2
-          }]
-        }
-      }] = verificationRequirements
+      const {
+        verificationRequirements: [{
+          dnsVerificationDetails: {
+            records: [{
+              name: dns2name,
+              data: dns2
+            }]
+          }
+        }]
+      } = await this.sp.cdn.sslRequest(stackId, siteId)
 
       await this.beget.dns.changeRecords({
         fqdn: `${dns2name}.${name}`,
@@ -132,11 +165,15 @@ class DomainsImport {
           name: 'MAIN_NO_CACHE',
           configuration: {
             originPullPolicy: [{
-              enable: true,
+              enabled: true,
+              expireSeconds: 0,
               expirePolicy: 'DO_NOT_CACHE',
               noCacheBehavior: 'spec',
               httpHeaders: '*',
-              pathFilter: `*//:${name}/`
+              pathFilter: `*://${name}/`,
+              methodFilter: null,
+              headerFilter: null,
+              statusCodeMatch: null
             }]
           }
         },
@@ -144,11 +181,15 @@ class DomainsImport {
           name: 'SETTING_NO_CACHE',
           configuration: {
             originPullPolicy: [{
-              enable: true,
+              enabled: true,
+              expireSeconds: 0,
               expirePolicy: 'DO_NOT_CACHE',
               noCacheBehavior: 'spec',
               httpHeaders: '*',
-              pathFilter: `*//:${name}/setting/`
+              pathFilter: `*://${name}/setting/`,
+              methodFilter: null,
+              headerFilter: null,
+              statusCodeMatch: null
             }]
           }
         }
@@ -158,6 +199,7 @@ class DomainsImport {
         await promise
 
         return this.sp.cdn.addRule(stackId, siteId, scopeId, rule)
+          .catch(error => (console.log(error)))
       }, Promise.resolve())
 
       await this.isp.domain.edit({
@@ -181,6 +223,10 @@ class DomainsImport {
     } catch (error) {
       throw error
     }
+  }
+
+  logger (name, msg) {
+    console.log(`[TEST]:[${name}]: ${JSON.stringify(msg)}`)
   }
 }
 
