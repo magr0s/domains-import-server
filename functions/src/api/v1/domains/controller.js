@@ -1,21 +1,28 @@
 const DomainsImport = require('../../../libs/domainsImport')
-const Settings = require('../settings/repository')
+const SettingsRepository = require('../settings/repository')
+
+const settingsRepo = new SettingsRepository()
 
 class DomainsController {
   static async import (req, res) {
     const {
       body: {
-        name = 'fortnitelib.ru',
+        name,
+        hoster,
         settingsId
       }
     } = req
 
-    if (!name || !settingsId) return res.status(400).send({ errorCode: 'domains/missing-fields' })
+    if (
+      !name ||
+      !settingsId ||
+      !hoster
+    ) return res.status(400).send({ errorCode: 'domains/missing-fields' })
 
     try {
-      const settings = await Settings.get(settingsId)
+      const settings = await settingsRepo.get(settingsId)
 
-      const domainsImport = new DomainsImport(settings)
+      const domainsImport = new DomainsImport(hoster, settings)
 
       await domainsImport.load(name)
 

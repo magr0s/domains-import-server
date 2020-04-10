@@ -1,4 +1,4 @@
-const { Beget } = require('node-beget')
+const Hosters = require('./hosters')
 const {
   StacksStackpach,
   SitesStackpath,
@@ -6,27 +6,59 @@ const {
 } = require('stackpath-nodejs')
 const { WebdomainMgr } = require('ispmanager-nodejs')
 
-const SITE_CONFIG = require('../configs/site.json')
+const APP_CONFIG = require('../../configs/app.json')
+const SITE_CONFIG = require('../../configs/site.json')
 
-const STATIC_SERVER_IP = '151.139.128.10'
+const { HOSTERS } = APP_CONFIG
 
 class DomainsImport {
-  constructor (params) {
+  constructor (hoster, params = {}) {
     const {
       begetLogin,
       begetPassword,
+      dreamhostLogin,
+      dreamhostPassword,
       serverIP,
       stackpathId,
       stackpathSecret,
       ispManagerLogin,
       ispManagerPassword,
-      ispManagerURL
+      ispManagerURL,
+      proxyURL,
+      proxyLogin,
+      proxyPassword
     } = params
 
-    const begetCredentials = {
-      login: begetLogin,
-      password: begetPassword
+    if (!HOSTERS.includes(hoster)) {
+      throw new Error(`Unknow ${hoster} hoster.`)
     }
+
+    const hosterParams = {}
+
+    switch (hoster) {
+      case 'beget':
+        Object.assign(hosterParams, {
+          login: begetLogin,
+          password: begetPassword
+        })
+        break
+
+      case 'dreamhost':
+        Object.assign(hosterParams, {
+          login: dreamhostLogin,
+          password: dreamhostPassword,
+          proxy: {
+            login: proxyLogin,
+            password: proxyPassword,
+            url: proxyURL
+          }
+        })
+        break
+
+      default: throw new Error(`The hoster ${hoster} is not installed.`)
+    }
+
+    this.hoster = new Hosters[hoster](hosterParams)
 
     const stackpathCredentials = {
       client_id: stackpathId,
@@ -34,8 +66,6 @@ class DomainsImport {
     }
 
     this.serverIP = serverIP
-
-    this.beget = new Beget(begetCredentials)
 
     this.sp = {
       stacks: new StacksStackpach(stackpathCredentials),
@@ -55,32 +85,13 @@ class DomainsImport {
   }
 
   async load (name) {
-    const [hostname, ...rest] = name.split('.')
-    const zone = rest.join('.')
-
     try {
-      const { id: zoneId } = await this.checkZone(zone)
+      const dnsList = []
 
-      await this.beget.domain.addVirtual({ hostname, zone_id: zoneId })
+      // hoster register domain
+      await this.hoster.createDomain(name)
 
-      await this.beget.dns.changeRecords({
-        fqdn: `${name}`,
-        records: {
-          A: [
-            { priority: 10, value: STATIC_SERVER_IP }
-          ],
-
-          MX: [
-            { priority: 10, value: "mx1.beget.com." },
-            { priority: 20, value: "mx2.beget.com." }
-          ],
-
-          "TXT": [
-            { priority: 10, value: "v=spf1 redirect=beget.com" }
-          ]
-        }
-      })
-
+      // cdn get stacks
       const {
         results: [{ id: stackId }]
       } = await this.sp.stacks.list()
@@ -95,25 +106,24 @@ class DomainsImport {
         })
       }
 
-      const {
-        site: { id: siteId }
-      } = await this.sp.sites.add(stackId, siteOpts)
+      // cdn add site
+      const { site: { id: siteId } } = await this.sp.sites.add(stackId, siteOpts)
 
+      // cdn get cname dns
       const { addresses: [dns1]} = await this.sp.cdn.dnsTargets(stackId, siteId)
 
-      await this.beget.dns.changeRecords({
-        fqdn: `www.${name}`,
-        records: {
-          CNAME: [
-            { priority: 10, value: dns1 }
-          ]
-        }
+      dnsList.push({
+        type: 'CNAME',
+        name: `www`,
+        value: dns1
       })
 
+      // cdn get scopes
       const { results: scopes } = await this.sp.cdn.getScopes(stackId, siteId)
 
       const { id: scopeId } = scopes.find(({ platform }) => (platform === 'CDS'))
 
+      // cdn get cname dns
       const {
         verificationRequirements: [{
           dnsVerificationDetails: {
@@ -125,14 +135,14 @@ class DomainsImport {
         }]
       } = await this.sp.cdn.sslRequest(stackId, siteId)
 
-      await this.beget.dns.changeRecords({
-        fqdn: `${dns2name}.${name}`,
-        records: {
-          CNAME: [
-            { priority: 10, value: dns2 }
-          ]
-        }
+      dnsList.push({
+        type: 'CNAME',
+        name: `${dns2name}`,
+        value: dns2
       })
+
+      // hoster set dns
+      await this.hoster.setDNS(name, dnsList)
 
       const rules = [
         {
@@ -169,6 +179,7 @@ class DomainsImport {
         }
       ]
 
+      // cdn set dynamic rules
       await rules.reduce(async (promise, rule) => {
         await promise
 
@@ -176,31 +187,15 @@ class DomainsImport {
           .catch(error => (console.log(error)))
       }, Promise.resolve())
 
+      // ips add domain
       await this.isp.domain.edit({
         name,
         email: `admin@${name}`
       })
     } catch (error) {
+      console.log(error)
       throw error
     }
-  }
-
-  async checkZone (name) {
-    try {
-      const result = await this.beget.domain.getZoneList()
-
-      const zone = result[name] || null
-
-      if (!zone) throw new Error(`Undefined domain zone.`)
-
-      return zone
-    } catch (error) {
-      throw error
-    }
-  }
-
-  logger (name, msg) {
-    console.log(`[TEST]:[${name}]: ${JSON.stringify(msg)}`)
   }
 }
 

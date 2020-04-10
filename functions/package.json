@@ -21,6 +21,10 @@
     "firebase-nodejs-helpers": "git+https://github.com/magr0s/firebase-nodejs-helpers.git",
     "ispmanager-nodejs": "git+https://github.com/magr0s/ispmanager-nodejs.git",
     "node-beget": "^1.0.6",
+    "puppeteer": "^2.1.1",
+    "puppeteer-extra": "^3.1.9",
+    "puppeteer-extra-plugin-stealth": "^2.4.9",
+    "random-useragent": "^0.3.1",
     "stackpath-nodejs": "git+https://github.com/magr0s/stackpath-nodejs.git"
   },
   "devDependencies": {

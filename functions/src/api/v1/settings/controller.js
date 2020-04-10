@@ -1,5 +1,7 @@
 const SettingsRepository = require('./repository')
 
+const settingsRepo = new SettingsRepository()
+
 class SettingsController {
   static async create (req, res) {
     const {
@@ -9,29 +11,39 @@ class SettingsController {
     const {
       begetLogin,
       begetPassword,
+      dreamhostLogin,
+      dreamhostPassword,
       serverIP,
       stackpathId,
       stackpathSecret,
       ispManagerURL,
       ispManagerLogin,
-      ispManagerPassword
+      ispManagerPassword,
+      proxyLogin,
+      proxyPassword,
+      proxyURL
     } = body
 
     if (
       !begetLogin ||
       !begetPassword ||
+      !dreamhostLogin ||
+      !dreamhostPassword ||
       !serverIP ||
       !stackpathId ||
       !stackpathSecret ||
       !ispManagerURL ||
       !ispManagerLogin ||
-      !ispManagerPassword
+      !ispManagerPassword ||
+      !proxyURL ||
+      !proxyLogin ||
+      !proxyPassword
     ) {
       return res.status(400).send({ errorCode: 'settings/missing-fields' })
     }
 
     try {
-      await SettingsRepository.create(body)
+      await settingsRepo.create(body)
 
       return res.status(200).send({ success: true })
     } catch ({ message }) {
@@ -48,12 +60,17 @@ class SettingsController {
     const {
       begetLogin,
       begetPassword,
+      dreamhostLogin,
+      dreamhostPassword,
       serverIP,
       stackpathId,
       stackpathSecret,
       ispManagerURL,
       ispManagerLogin,
-      ispManagerPassword
+      ispManagerPassword,
+      proxyLogin,
+      proxyPassword,
+      proxyURL
     } = body
 
     if (!id) return res.status(400).send({ errorCode: 'settings/bad-id' })
@@ -61,18 +78,23 @@ class SettingsController {
     if (
       !begetLogin ||
       !begetPassword ||
+      !dreamhostLogin ||
+      !dreamhostPassword ||
       !serverIP ||
       !stackpathId ||
       !stackpathSecret ||
       !ispManagerURL ||
       !ispManagerLogin ||
-      !ispManagerPassword
+      !ispManagerPassword ||
+      !proxyURL ||
+      !proxyLogin ||
+      !proxyPassword
     ) {
       return res.status(400).send({ errorCode: 'settings/missing-fields' })
     }
 
     try {
-      await SettingsRepository.update(id, body)
+      await settingsRepo.update(id, body)
 
       return res.status(200).send({ success: true })
     } catch ({ message }) {

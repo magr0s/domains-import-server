@@ -1,0 +1,19 @@
+{
+  "HOSTERS": [
+    "beget",
+    "dreamhost"
+  ],
+
+  "CDN_STATIC_IP": "151.139.128.10",
+
+  "WAIT_OPTIONS": {
+    "waitUntil": "load"
+  },
+
+  "DREAMHOST_URL": "https://panel.dreamhost.com",
+
+  "PAGE_URLS": {
+    "MANAGE_DOMAIN": "?tree=domain.manage&current_step=Index&next_step=ShowAddhttp&domain=",
+    "SET_DNS": "?tree=domain.manage&current_step=Index&next_step=ShowZone&domain="
+  }
+}
