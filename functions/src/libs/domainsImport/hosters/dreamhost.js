@@ -50,6 +50,10 @@ class DreamhostHoster {
       await this._form('#dnsform', [
         { element: '#dns-domain', value: domain }
       ])
+
+      const error = await this._checkDomainAdd()
+
+      if (error) throw new Error('You can`t add that domain')
     } catch (error) {
       throw error
     }
@@ -94,6 +98,10 @@ class DreamhostHoster {
     } catch (error) {
       throw error
     }
+  }
+
+  async _checkDomainAdd () {
+    return this.page.waitForSelector('.Alert.Alert--error', { timeout: 2000 })
   }
 
   async _form(element, data) {
