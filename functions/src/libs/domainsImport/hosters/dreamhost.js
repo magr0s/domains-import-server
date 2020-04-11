@@ -102,6 +102,7 @@ class DreamhostHoster {
 
   async _checkDomainAdd () {
     return this.page.waitForSelector('.Alert.Alert--error', { timeout: 2000 })
+      .catch(() => (false))
   }
 
   async _form(element, data) {
