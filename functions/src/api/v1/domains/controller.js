@@ -1,7 +1,7 @@
-const DomainsImport = require('../../../libs/domainsImport')
-const SettingsRepository = require('../settings/repository')
+const DomainsImport = require('../../../libs/domainsImport');
+const Repository = require('../../../libs/repository');
 
-const settingsRepo = new SettingsRepository()
+const settingsRepo = new Repository('settings');
 
 class DomainsController {
   static async import (req, res) {
@@ -27,8 +27,9 @@ class DomainsController {
       await domainsImport.load(name)
 
       return res.status(200).send({ success: true })
-    } catch ({ message }) {
-      return res.status(500).send({ error: message })
+    } catch (error) {
+      console.log('DEBUG-ERROR', name, error.toString());
+      return res.status(500).send({ error: error.toString() })
     }
   }
 }

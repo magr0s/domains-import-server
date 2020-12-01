@@ -1,6 +1,6 @@
-const SettingsRepository = require('./repository')
+const Repository = require('../../../libs/repository');
 
-const settingsRepo = new SettingsRepository()
+const settingsRepo = new Repository('settings');
 
 class SettingsController {
   static async create (req, res) {
@@ -19,8 +19,6 @@ class SettingsController {
       ispManagerURL,
       ispManagerLogin,
       ispManagerPassword,
-      proxyLogin,
-      proxyPassword,
       proxyURL
     } = body
 
@@ -35,15 +33,16 @@ class SettingsController {
       !ispManagerURL ||
       !ispManagerLogin ||
       !ispManagerPassword ||
-      !proxyURL ||
-      !proxyLogin ||
-      !proxyPassword
+      !proxyURL
     ) {
       return res.status(400).send({ errorCode: 'settings/missing-fields' })
     }
 
     try {
-      await settingsRepo.create(body)
+      await settingsRepo.create(Object.assign({
+        proxyLogin: '',
+        proxyPassword: ''
+      }, body))
 
       return res.status(200).send({ success: true })
     } catch ({ message }) {
@@ -68,8 +67,6 @@ class SettingsController {
       ispManagerURL,
       ispManagerLogin,
       ispManagerPassword,
-      proxyLogin,
-      proxyPassword,
       proxyURL
     } = body
 
@@ -86,15 +83,16 @@ class SettingsController {
       !ispManagerURL ||
       !ispManagerLogin ||
       !ispManagerPassword ||
-      !proxyURL ||
-      !proxyLogin ||
-      !proxyPassword
+      !proxyURL
     ) {
       return res.status(400).send({ errorCode: 'settings/missing-fields' })
     }
 
     try {
-      await settingsRepo.update(id, body)
+      await settingsRepo.update(id, Object.assign({
+        proxyLogin: '',
+        proxyPassword: ''
+      }, body))
 
       return res.status(200).send({ success: true })
     } catch ({ message }) {

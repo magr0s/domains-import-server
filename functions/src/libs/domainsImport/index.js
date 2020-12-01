@@ -95,6 +95,10 @@ class DomainsImport {
       const {
         results: [{ id: stackId }]
       } = await this.sp.stacks.list()
+        .then(data => {
+          console.log('GET-STACKS', JSON.stringify(data))
+          return data;
+        });
 
       const siteOpts = {
         domain: name,
@@ -108,6 +112,10 @@ class DomainsImport {
 
       // cdn add site
       const { site: { id: siteId } } = await this.sp.sites.add(stackId, siteOpts)
+        .then(data => {
+          console.log('ADD-SITE', JSON.stringify(data))
+          return data;
+        });
 
       // cdn get cname dns
       const { addresses: [dns1]} = await this.sp.cdn.dnsTargets(stackId, siteId)
@@ -120,8 +128,12 @@ class DomainsImport {
 
       // cdn get scopes
       const { results: scopes } = await this.sp.cdn.getScopes(stackId, siteId)
+        .then(data => {
+          console.log('SCOPES', JSON.stringify(data))
+          return data;
+        });
 
-      const { id: scopeId } = scopes.find(({ platform }) => (platform === 'CDS'))
+      const { id: scopeId } = scopes.find(({ platform }) => (platform === 'CDS'));
 
       // cdn get cname dns
       const {
@@ -134,6 +146,10 @@ class DomainsImport {
           }
         }]
       } = await this.sp.cdn.sslRequest(stackId, siteId)
+          .then(data => {
+            console.log('DNS', JSON.stringify(data))
+            return data;
+          });
 
       dnsList.push({
         type: 'CNAME',
@@ -184,7 +200,7 @@ class DomainsImport {
         await promise
 
         return this.sp.cdn.addRule(stackId, siteId, scopeId, rule)
-          .catch(error => (console.log(error)))
+          .catch(error => (console.log('ERROR-CDN', error.toString())))
       }, Promise.resolve())
 
       // ips add domain
@@ -193,10 +209,10 @@ class DomainsImport {
         email: `admin@${name}`
       })
     } catch (error) {
-      console.log(error)
       throw error
     }
   }
 }
 
 module.exports = DomainsImport
+

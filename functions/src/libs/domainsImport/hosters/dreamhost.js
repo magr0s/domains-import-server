@@ -4,6 +4,9 @@ const userAgentRND = require('random-useragent')
 
 puppeteer.use(StealthPlugin())
 
+// https://github.com/puppeteer/puppeteer/issues/594#issuecomment-325919885
+process.setMaxListeners(Infinity)
+
 const APP_CONFIG = require('../../../configs/app.json')
 const {
   WAIT_OPTIONS,
@@ -55,6 +58,9 @@ class DreamhostHoster {
 
       if (error) throw new Error('You can`t add that domain')
     } catch (error) {
+      if (typeof (this.browser) !== 'undefined')
+        await this._closeBrowser();
+
       throw error
     }
   }
@@ -93,10 +99,10 @@ class DreamhostHoster {
 
         return this._form(form, fields)
       }, Promise.resolve())
-
-      await this._closeBrowser()
     } catch (error) {
       throw error
+    } finally {
+      await this._closeBrowser();
     }
   }
 
@@ -144,10 +150,16 @@ class DreamhostHoster {
       this.page = await this.browser.newPage()
 
       await this.page.setUserAgent(userAgentRND.toString())
-      await this.page.authenticate({
-        username: this.proxy.login,
-        password: this.proxy.password
-      })
+
+      if (
+        this.proxy.login &&
+        this.proxy.password
+      ) {
+        await this.page.authenticate({
+          username: this.proxy.login,
+          password: this.proxy.password
+        });
+      }
     } catch (error) {
       throw error
     }

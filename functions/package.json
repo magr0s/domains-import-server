@@ -18,7 +18,7 @@
     "express": "^4.17.1",
     "firebase-admin": "^8.6.0",
     "firebase-functions": "^3.3.0",
-    "firebase-nodejs-helpers": "git+https://github.com/magr0s/firebase-nodejs-helpers.git",
+    "firebase-nodejs-helpers": "^1.1.1",
     "ispmanager-nodejs": "git+https://github.com/magr0s/ispmanager-nodejs.git",
     "node-beget": "^1.0.6",
     "puppeteer": "^2.1.1",
