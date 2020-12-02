@@ -5,6 +5,7 @@ const {
   CDNStackpath
 } = require('stackpath-nodejs')
 const { WebdomainMgr } = require('ispmanager-nodejs')
+const delay = require('delay');
 
 const APP_CONFIG = require('../../configs/app.json')
 const SITE_CONFIG = require('../../configs/site.json')
@@ -135,6 +136,34 @@ class DomainsImport {
 
       const { id: scopeId } = scopes.find(({ platform }) => (platform === 'CDS'));
 
+      let dnsResponse = false;
+      let i = 0;
+
+      /* eslint-disable no-await-in-loop */
+      /* eslint-disable no-loop-func */
+      do {
+        // wait 10s
+        dnsResponse = await delay(10000)
+          .then(() => (this.sp.cdn.sslRequest(stackId, siteId)))
+          .then((response) => {
+            console.log('DNS', JSON.stringify({ stackId, siteId }), JSON.stringify(response));
+
+            const { code } = response;
+
+            return !code && response;
+          });
+
+        i++;
+      } while (
+        dnsResponse === false &&
+        i < 9
+      );
+      /* eslint-enable no-await-in-loop */
+      /* eslint-enable no-loop-func */
+
+      if (!dnsResponse)
+        throw new Error('Stackpath DNS error');
+
       // cdn get cname dns
       const {
         verificationRequirements: [{
@@ -145,11 +174,7 @@ class DomainsImport {
             }]
           }
         }]
-      } = await this.sp.cdn.sslRequest(stackId, siteId)
-          .then(data => {
-            console.log('DNS', JSON.stringify(data))
-            return data;
-          });
+      } = dnsResponse;
 
       dnsList.push({
         type: 'CNAME',
