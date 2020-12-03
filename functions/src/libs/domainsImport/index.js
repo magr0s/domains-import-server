@@ -2,7 +2,8 @@ const Hosters = require('./hosters')
 const {
   StacksStackpach,
   SitesStackpath,
-  CDNStackpath
+  CDNStackpath,
+  DeliveryDomainsStackpath
 } = require('stackpath-nodejs')
 const { WebdomainMgr } = require('ispmanager-nodejs')
 const delay = require('delay');
@@ -10,7 +11,9 @@ const delay = require('delay');
 const APP_CONFIG = require('../../configs/app.json')
 const SITE_CONFIG = require('../../configs/site.json')
 
-const { HOSTERS } = APP_CONFIG
+const {
+  HOSTERS
+} = APP_CONFIG
 
 class DomainsImport {
   constructor (hoster, params = {}) {
@@ -71,7 +74,8 @@ class DomainsImport {
     this.sp = {
       stacks: new StacksStackpach(stackpathCredentials),
       sites: new SitesStackpath(stackpathCredentials),
-      cdn: new CDNStackpath(stackpathCredentials)
+      cdn: new CDNStackpath(stackpathCredentials),
+      deliveryDomains: new DeliveryDomainsStackpath(stackpathCredentials)
     }
 
     const ispOpts = {
@@ -175,6 +179,12 @@ class DomainsImport {
           }
         }]
       } = dnsResponse;
+
+      await this.sp.deliveryDomains.add(stackId, siteId, { domain: `*.${name}` })
+        .then(data => {
+          console.log('DELIVERY DOMAINS', JSON.stringify(data))
+          return data;
+        });
 
       dnsList.push({
         type: 'CNAME',
