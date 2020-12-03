@@ -68,7 +68,15 @@ class DreamhostHoster {
   async setDNS (domain, params) {
     try {
       const dns = [
-        { type: 'A', value: CDN_STATIC_IP },
+        {
+          type: 'A',
+          value: CDN_STATIC_IP
+        },
+        {
+          type: 'A',
+          name: '*',
+          value: CDN_STATIC_IP
+        },
         ...params
       ]
 
