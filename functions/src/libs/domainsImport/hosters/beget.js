@@ -54,7 +54,9 @@ class BegetHoster {
         }
       })
 
-      await params.reduce(async (p, { name, value }, i) => {
+      await params
+        .filter(({ type }) => (type === 'CNAME'))
+        .reduce(async (p, { name, value }) => {
         await p
 
         return this.beget.dns.changeRecords({
