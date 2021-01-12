@@ -1,3 +1,5 @@
+/* eslint-disable no-loop-func */
+/* eslint-disable no-await-in-loop */
 const Hosters = require('./hosters')
 const {
   StacksStackpach,
@@ -140,57 +142,58 @@ class DomainsImport {
 
       const { id: scopeId } = scopes.find(({ platform }) => (platform === 'CDS'));
 
-      let dnsResponse = false;
-      let i = 0;
-
-      /* eslint-disable no-await-in-loop */
-      /* eslint-disable no-loop-func */
-      do {
-        // wait 10s
-        dnsResponse = await delay(10000)
-          .then(() => (this.sp.cdn.sslRequest(stackId, siteId)))
-          .then((response) => {
-            console.log('DNS', JSON.stringify({ stackId, siteId }), JSON.stringify(response));
-
-            const { code } = response;
-
-            return !code && response;
-          });
-
-        i++;
-      } while (
-        dnsResponse === false &&
-        i < 9
-      );
-      /* eslint-enable no-await-in-loop */
-      /* eslint-enable no-loop-func */
-
-      if (!dnsResponse)
-        throw new Error('Stackpath DNS error');
-
-      // cdn get cname dns
-      const {
-        verificationRequirements: [{
-          dnsVerificationDetails: {
-            records: [{
-              name: dns2name,
-              data: dns2
-            }]
-          }
-        }]
-      } = dnsResponse;
-
+      // set delivery domain
       await this.sp.deliveryDomains.add(stackId, siteId, { domain: `*.${name}` })
         .then(data => {
           console.log('DELIVERY DOMAINS', JSON.stringify(data))
           return data;
         });
 
-      dnsList.push({
-        type: 'CNAME',
-        name: `${dns2name}`,
-        value: dns2
-      })
+      // cdn get cname dns
+      const certParams = {
+        hosts: [name, `www.${name}`],
+        verificationMethod: 'DNS'
+      }
+
+      const iterationCnt = 10;
+
+      for (let i = 0; i < iterationCnt; i++) {
+        try {
+          const {
+            verificationRequirements
+          } = await this.sp.cdn.certificatesRequest(stackId, siteId, certParams)
+            .then((response) => {
+              console.log('DNS', JSON.stringify({ stackId, siteId }), JSON.stringify(certParams), JSON.stringify(response));
+
+              return response;
+            });
+
+          if (typeof (verificationRequirements) === 'undefined')
+            throw new Error('Wait DNS initialize.');
+
+          const [{
+            dnsVerificationDetails: {
+              records: [{
+                name: dns2name,
+                data: dns2
+              }]
+            }
+          }] = verificationRequirements;
+
+          dnsList.push({
+            type: 'CNAME',
+            name: `${dns2name}`,
+            value: dns2
+          });
+
+          i = iterationCnt;
+        } catch (err) {
+          await delay(3000);
+
+          if (i >= (iterationCnt - 1))
+            throw new Error('DNS not initialize.');
+        }
+      }
 
       // hoster set dns
       await this.hoster.setDNS(name, dnsList)
@@ -249,5 +252,4 @@ class DomainsImport {
   }
 }
 
-module.exports = DomainsImport
-
+module.exports = DomainsImport;

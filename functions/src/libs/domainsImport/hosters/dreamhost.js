@@ -1,20 +1,31 @@
-const puppeteer = require('puppeteer-extra')
-const StealthPlugin = require('puppeteer-extra-plugin-stealth')
-const userAgentRND = require('random-useragent')
+const { default: PQueue } = require('p-queue');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const RecaptchaPlugin = require('puppeteer-extra-plugin-recaptcha');
 
-puppeteer.use(StealthPlugin())
+puppeteer.use(StealthPlugin());
+
+puppeteer.use(
+  RecaptchaPlugin({
+    provider: {
+      id: '2captcha',
+      token: '248fff844400cfd1ceaee9def83bd2af'
+    }
+  })
+);
 
 // https://github.com/puppeteer/puppeteer/issues/594#issuecomment-325919885
-process.setMaxListeners(Infinity)
+process.setMaxListeners(Infinity);
 
-const APP_CONFIG = require('../../../configs/app.json')
+const APP_CONFIG = require('../../../configs/app.json');
 const {
   WAIT_OPTIONS,
   DREAMHOST_URL,
   CDN_STATIC_IP,
   PAGE_URLS
-} = APP_CONFIG
+} = APP_CONFIG;
 
+const pquque = new PQueue({ concurrency: 1 });
 class DreamhostHoster {
   constructor (params = {}) {
     const { login, password, proxy } = params
@@ -40,141 +51,140 @@ class DreamhostHoster {
     try {
       await this._initBrowser()
 
+      console.log('DREAMHOST', 'BROWSER INIT', 'OK');
+
       // auth
       await this._go()
+      console.log('DREAMHOST', 'OPEN SITE', 'OK');
+
       await this._form('form.login-form', [
-        { element: '#username', value: this.login },
-        { element: '#password', value: this.password }
-      ])
+       { element: '#username', value: this.login },
+       { element: '#password', value: this.password }
+      ]);
+
+      console.log('DREAMHOST', 'LOGIN', 'OK');
 
       // add domain
-      await this._go(PAGE_URLS.MANAGE_DOMAIN)
+      await this._go(PAGE_URLS.MANAGE_DOMAIN);
+
+      console.log('DREAMHOST', 'OPEN DOMAIN MANAGE', 'OK');
 
       await this._form('#dnsform', [
-        { element: '#dns-domain', value: domain }
-      ])
+       { element: '#dns-domain', value: domain }
+      ]);
+
+      console.log('DREAMHOST', 'WORK WITH DNS', 'OK');
 
       const error = await this._checkDomainAdd()
 
-      if (error) throw new Error('You can`t add that domain')
+      if (error) throw new Error('You can`t add that domain');
+
     } catch (error) {
       if (typeof (this.browser) !== 'undefined')
-        await this._closeBrowser();
+        await this.browser.close();
 
       throw error
     }
   }
 
   async setDNS (domain, params) {
-    try {
-      const dns = [
-        {
-          type: 'A',
-          value: CDN_STATIC_IP
-        },
-        {
-          type: 'A',
-          name: '*',
-          value: CDN_STATIC_IP
-        },
-        ...params
-      ]
+    const dns = [
+      {
+        type: 'A',
+        value: CDN_STATIC_IP
+      },
+      {
+        type: 'A',
+        name: '*',
+        value: CDN_STATIC_IP
+      },
+      ...params
+    ];
 
-      // edit domain
-      await dns.reduce(async (p, { type, name, value }) => {
-        await p
-        await this._go(PAGE_URLS.SET_DNS + domain)
+    // edit domain
+    await dns.reduce(async (p, { type, name, value }) => {
+      await p
+      await this._go(PAGE_URLS.SET_DNS + domain)
 
-        const fields = []
+      const fields = []
 
-        fields.push({
-          element: '#type',
-          value: type,
-          type: 'select'
-        })
+      fields.push({
+        element: '#type',
+        value: type,
+        type: 'select'
+      })
 
-        fields.push({
-          element: '#value',
-          value
-        })
+      fields.push({
+        element: '#value',
+        value
+      })
 
-        name && fields.push({
-          element: '#name',
-          value: `${name}`
-        })
+      name && fields.push({
+        element: '#name',
+        value: `${name}`
+      })
 
-        const [, form] = await this.page.$$('form')
+      const [, form] = await this.page.$$('form')
 
-        return this._form(form, fields)
-      }, Promise.resolve())
-    } catch (error) {
-      throw error
-    } finally {
-      await this._closeBrowser();
-    }
+      return this._form(form, fields)
+    }, Promise.resolve());
+
+    await this.browser.close();
   }
 
-  async _checkDomainAdd () {
+  _checkDomainAdd () {
     return this.page.waitForSelector('.Alert.Alert--error', { timeout: 2000 })
-      .catch(() => (false))
+      .catch(() => (false));
   }
 
   async _form(element, data) {
-    try {
-      await data.reduce(async (p, { element, value, type = 'input' }) => {
-        await p
+    const queued = data.map(({ element, value, type }) => {
+      const isSelect = type === 'select';
 
-        switch (type) {
-          case 'select':
-            return this.page.select(element, value)
+      return isSelect
+        ? () => (this.page.select(element, value))
+        : () => (this.page.type(element, value));
+    });
 
-          default: return this.page.type(element, value)
-        }
-      }, Promise.resolve())
+    await pquque.addAll(queued);
 
-      return Promise.all([
-        this.page.waitForNavigation(WAIT_OPTIONS),
-        (typeof (element) === 'string')
-          ? this.page.$eval(element, form => (form.submit()))
-          : element.$eval('[type="submit"]', btn => (btn.click()))
-      ])
-    } catch (error) {
-      throw error
-    }
+    await Promise.all([
+      this.page.waitForNavigation(WAIT_OPTIONS),
+      (typeof (element) === 'string')
+        ? this.page.$eval(element, form => (form.submit()))
+        : element.$eval('[type="submit"]', btn => (btn.click()))
+    ]);
+
+    await this.page.solveRecaptchas();
   }
 
-  _go (endpoint = '') {
-    return this.page.goto(`${DREAMHOST_URL}/index.cgi${endpoint}`)
+  async _go (endpoint = '') {
+    await this.page.goto(`${DREAMHOST_URL}/index.cgi${endpoint}`, WAIT_OPTIONS);
+    await this.page.solveRecaptchas();
   }
 
   async _initBrowser () {
-    try {
-      this.browser = await puppeteer.launch({
-        args: [
-          `--proxy-server=${this.proxy.url}`
-        ]
-      })
+    this.browser = await puppeteer.launch({
+      // headless: false,
+      args: [
+        `--proxy-server=${this.proxy.url}`
+      ]
+    });
 
-      this.page = await this.browser.newPage()
+    this.page = await this.browser.newPage();
 
-      await this.page.setUserAgent(userAgentRND.toString())
+    const proxyHasCredentials = this.proxy.login && this.proxy.password;
 
-      if (
-        this.proxy.login &&
-        this.proxy.password
-      ) {
-        await this.page.authenticate({
-          username: this.proxy.login,
-          password: this.proxy.password
-        });
-      }
-    } catch (error) {
-      throw error
+    if (proxyHasCredentials) {
+      await this.page.authenticate({
+        username: this.proxy.login,
+        password: this.proxy.password
+      });
     }
   }
 
   _closeBrowser () {
-    return this.browser.close()
+    return this.browser.close();
   }
 }
 
